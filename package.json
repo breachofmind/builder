@@ -1,0 +1,33 @@
+{
+  "name": "builder",
+  "version": "1.0.0",
+  "description": "A standardized way of doing grunt builds",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/breachofmind/builder.git"
+  },
+  "keywords": [
+    "grunt",
+    "build"
+  ],
+  "author": "Mike Adamczyk <mike@bom.us>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/breachofmind/builder/issues"
+  },
+  "homepage": "https://github.com/breachofmind/builder#readme",
+  "dependencies": {
+    "grunt": "^0.4.5",
+    "grunt-autoprefixer": "^3.0.3",
+    "grunt-contrib-compass": "^1.0.4",
+    "grunt-contrib-concat": "^0.5.1",
+    "grunt-contrib-cssmin": "^0.14.0",
+    "grunt-contrib-uglify": "^0.11.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-react": "^0.12.3"
+  }
+}
