@@ -1,3 +1,11 @@
+var inspect = require('util').inspect,
+    defaults = {};
+
+defaults.buildPath = "public/static";
+defaults.resourcePath = "resources";
+defaults.assetPath = "resources/assets";
+
+
 Array.prototype.merge = function(array)
 {
     if (typeof array == "string") {
@@ -9,6 +17,232 @@ Array.prototype.merge = function(array)
     }
     return this;
 };
+
+Array.prototype.concat = function(sep)
+{
+    if (!arguments.length) {
+        sep = ", ";
+    }
+    var str = [];
+    this.map(function(item) {
+        if (!item || item=="") {
+            return;
+        }
+        str.push(item);
+    });
+    return str.join(sep);
+};
+
+
+/**
+ * File object class.
+ * @param name string file name
+ * @constructor
+ */
+function File(name)
+{
+    var self = this;
+
+    this.basename = null;
+    this.extension = null;
+    this.dir = null;
+
+    parse(name);
+
+    /**
+     * To set a new name for the file.
+     * @param name string
+     * @returns {File}
+     */
+    this.set = function(name)
+    {
+        parse(name);
+        return this;
+    };
+
+    /**
+     * Create a full path to the file.
+     * @param manipulator function - optional, adjusts the filename at runtime without changing the basename.
+     * @returns {string}
+     */
+    this.path = function(manipulator)
+    {
+        var filename = [this.basename,this.extension].concat('.');
+        if (manipulator) {
+            filename = manipulator(this);
+        }
+        return [this.dir, filename].concat("/");
+    };
+
+    /**
+     * Return the segments or a specific segment of the directory.
+     * @param n
+     * @returns {*}
+     */
+    this.segments = function(n)
+    {
+        var arr = this.dir.split("/");
+        if (!arguments.length) {
+            return arr;
+        }
+        return arr[n] ? arr[n] : null;
+    };
+
+    /**
+     * Add this file to a FileCollection.
+     * @param collection FileCollection
+     * @returns {File}
+     */
+    this.addTo = function(collection)
+    {
+        collection.push(this);
+        return this;
+    };
+
+    /**
+     * Clone this file object.
+     * @returns {File}
+     */
+    this.clone = function()
+    {
+        return new File(this.path());
+    };
+
+    /**
+     * Parse the given name into parts.
+     * @param file string
+     */
+    function parse(file)
+    {
+        if (!file || file=="") {
+            return;
+        }
+        var segments = file.split("/");
+        var last = segments.pop();
+        var parts = last.split(".");
+        var dir = segments.join("/");
+        var ext = parts.pop();
+
+        self.filename = last;
+        self.dir = dir=="" || !dir ? null : dir;
+        self.extension = ext=="" || !ext ? null : ext;
+        self.basename = parts.join(".");
+    }
+}
+
+/**
+ * Change the toString method to print the full filepath.
+ * @returns {string}
+ */
+File.prototype.toString = function()
+{
+    return this.path();
+};
+
+/**
+ * File Collection superArray of File objects.
+ * @param files array of {File}
+ * @constructor
+ */
+function FileCollection(files)
+{
+    var collection = this;
+
+    this.buildFile = null;
+
+    /**
+     * Add files to this collection.
+     * @param files
+     * @returns {FileCollection}
+     */
+    this.add = function(files)
+    {
+        files.map(function(file) {
+            if (file instanceof File) {
+                return collection.push(file);
+            }
+            return collection.push(new File(file));
+        });
+        return this;
+    };
+
+    /**
+     * Return an array of the file paths.
+     * @returns {*}
+     */
+    this.list = function()
+    {
+        return this.map(function(file) {
+            return file.path();
+        });
+    };
+
+    /**
+     * Bulk-set the file directories.
+     * @param dir string
+     * @returns {FileCollection}
+     */
+    this.setDirectory = function(dir)
+    {
+        this.map(function(file){
+            file.dir = dir;
+        });
+        return this;
+    };
+
+    this.setBuildFile = function(name, path)
+    {
+        this.buildFile = new File(name);
+        if (path) this.buildFile.dir = path;
+        return this;
+    };
+
+    /**
+     * Clone this collection into a new collection.
+     * @returns {FileCollection}
+     */
+    this.clone = function()
+    {
+        var files = this.map(function(file) {
+            return file.clone();
+        });
+        return new FileCollection(files);
+    };
+
+    /**
+     * Returns an object with the build file as the key
+     * and the value as the array of files in this collection.
+     * @param manipulator function - manipulates the build file name. optional
+     * @returns {{}}
+     */
+    this.prefix = function(manipulator)
+    {
+        var out = {};
+        out[this.buildFile.path(manipulator)] = this.list();
+        return out;
+    };
+
+    /**
+     * Return an object where the build file is the same file.
+     * @param manipulator function - manipulates the build file name. optional
+     * @returns {{}}
+     */
+    this.prefixOverwrite = function(manipulator)
+    {
+        var out = {};
+        this.map(function(file) {
+            out[file.path(manipulator)]  = file.path();
+        });
+        return out;
+    };
+
+    this.add(files);
+}
+
+FileCollection.prototype = [];
+FileCollection.prototype.constructor = FileCollection;
+
+
 
 var builder = (function(){
     var grunt,
@@ -355,7 +589,7 @@ var builder = (function(){
             grunt.loadNpmTasks('grunt-contrib-watch');
             grunt.loadNpmTasks('grunt-react');
 
-            return this.use( options.use || 'site' );
+            return this.use( options.use || 'default' );
         },
 
         /**
