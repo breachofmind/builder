@@ -10,7 +10,6 @@
  * grunt watch (for development, livereload is enabled)
  */
 var builder = require('./build'),
-    chalk = require('chalk'),
     inspect = require('util').inspect,
     initConfig = {},
     $;
@@ -19,26 +18,13 @@ module.exports = function(grunt) {
 
     $ = builder.init(grunt);
 
-    if (!$) {
-        console.log(chalk.red("\nMissing Build Configuration!"));
-        process.exit();
-    }
-
-    console.log("\n"+"** Using Build Configuration: "+chalk.green($.name)+" **\n\n");
-
     /**
      * <concat>
      */
     initConfig['concat'] = {
         options: {separator:";\n"},
-        src: {
-            dest: $.to('src'),
-            src:  $.src()
-        },
-        lib: {
-            dest: $.to('lib'),
-            src:  $.lib()
-        }
+        src: $.collection('js-src').toObject(),
+        lib: $.collection('js-lib').toObject()
     };
     $.tasks('concat:lib');
     $.tasks('concat:src');
@@ -50,9 +36,9 @@ module.exports = function(grunt) {
     initConfig['compass'] = {
         dist: {
             options: {
-                sassDir: $.scss(),
-                cssDir:  $.build(),
-                importPath: $.import()
+                sassDir: 'resources/assets/scss',
+                cssDir:  'public/static',
+                //importPath: $.import()
             }
         }
     };
@@ -64,17 +50,17 @@ module.exports = function(grunt) {
      */
     initConfig['watch'] = {
         scripts: {
-            files: $.src(),
+            files: $.collection('js-src').list(),
             tasks: ['concat:src'],
             options: {livereload:true}
         },
         scss: {
-            files: [$.scss('**/*.scss')],
+            files: ['resources/assets/scss/**/*.scss'],
             tasks: ['compass'],
             options: {livereload:true}
         },
         blade: {
-            files: [$.view('**/*.php')],
+            files: ['resources/assets/views/**/*.php'],
             options: {livereload:true}
         }
     };
@@ -85,7 +71,7 @@ module.exports = function(grunt) {
      */
     if ($.has('css')) {
 
-        initConfig['autoprefixer'] = $.prefix('css');
+        initConfig['autoprefixer'] = $.collection('css').prefixOverwrite();
         $.tasks('autoprefixer');
     }
 
@@ -97,13 +83,13 @@ module.exports = function(grunt) {
 
         initConfig['react'] = {
             src: {
-                files: $.into('jsx')
+                files: $.collection('jsx').prefix()
             }
         };
 
         // Add a watch task, too.
         initConfig['watch'].react = {
-            files: $.jsx(),
+            files: $.collection('jsx').list(),
             tasks: ['react:src'],
             options: {livereload:true}
         };
@@ -116,10 +102,14 @@ module.exports = function(grunt) {
      */
     initConfig['uglify'] = {
         src: {
-            files: $.prefixTo('src')
+            files: $.collection('js-src').prefix(function(file) {
+                return [file.basename,'min',file.extension].concat(".");
+            })
         },
         lib: {
-            files: $.prefixTo('lib')
+            files: $.collection('js-lib').prefix(function(file) {
+                return [file.basename,'min',file.extension].concat(".");
+            })
         }
     };
 
@@ -129,14 +119,24 @@ module.exports = function(grunt) {
      */
     initConfig['cssmin'] = {
         src: {
-            files: $.prefix('css')
+            files: $.collection('css').prefixOverwrite(function(file) {
+                return [file.basename,'min',file.extension].concat(".");
+            })
         }
     };
-
 
     //console.log (inspect(initConfig,true,10));
 
     grunt.initConfig(initConfig);
+
+    // Node modules to load.
+    grunt.loadNpmTasks('grunt-autoprefixer');
+    grunt.loadNpmTasks('grunt-contrib-concat');
+    grunt.loadNpmTasks('grunt-contrib-compass');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-cssmin');
+    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-react');
 
     grunt.registerTask('default', $.tasks());
 

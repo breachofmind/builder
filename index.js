@@ -1,4 +1,5 @@
 var inspect = require('util').inspect,
+    chalk = require('chalk'),
     defaults = {};
 
 defaults.buildPath = "public/static";
@@ -31,6 +32,20 @@ Array.prototype.concat = function(sep)
         str.push(item);
     });
     return str.join(sep);
+};
+
+String.prototype.replaceKey = function(key,value)
+{
+    var txt = this;
+    var rx = /{([^}]+)}/g;
+    var keys = {};
+    while(match = rx.exec(txt)) {
+        keys[match[1]] = match.index;
+    }
+    if (keys[key]) {
+        return txt.replace(new RegExp("{"+key+"}","g"),value);
+    }
+    return txt.toString();
 };
 
 
@@ -149,14 +164,22 @@ function FileCollection(files)
     var collection = this;
 
     this.buildFile = null;
+    this.name = null;
 
     /**
      * Add files to this collection.
-     * @param files
+     * @param files string|array
      * @returns {FileCollection}
      */
     this.add = function(files)
     {
+        if (!files) {
+            return this;
+        }
+        if (files instanceof String) {
+            collection.push(new File(files));
+            return this;
+        }
         files.map(function(file) {
             if (file instanceof File) {
                 return collection.push(file);
@@ -236,6 +259,19 @@ function FileCollection(files)
         return out;
     };
 
+    /**
+     * Convert the collection to a handy object used by grunt.
+     * @returns {{dest: string, src: []}}
+     */
+    this.toObject = function()
+    {
+        return {
+            dest:this.buildFile.path(),
+            src:this.list()
+        }
+    };
+
+
     this.add(files);
 }
 
@@ -256,208 +292,93 @@ var builder = (function(){
      */
     function BuildConfiguration (group)
     {
-        var conf = {},
-            tasks = [],
+        var tasks = [],
+            collections = {},
+            paths = {},
             build = this;
 
         // The name of this group.
         this.name = group;
 
-        // Default paths.
-        var paths = {
-            build:      "public/static",
-            resource:   "resources",
-            asset:      "resources/assets",
-            view:       "resources/views",
-            js:         "resources/assets/js",
-            scss:       "resources/assets/scss",
-            jsx:        "resources/assets/jsx",
-            import:     null,
-        };
-
-        for (var prop in paths) {
-            this[prop] = getPath(prop);
-        }
-
-        // File names to build the conf files into.
-        // These files are dumped into the build directory.
-        var buildTo = {
-            src:    this.name+".src.js",
-            lib:    this.name+".lib.js",
-            jsx:    this.name+".jsx.js"
-        };
-
         /**
-         * Bulk-set the file and build paths.
-         * @param func function
+         * Select or Create a new collection or add to existing collection.
+         * @param name string
+         * @param files string|array
+         * @param opts
          * @returns {BuildConfiguration}
          */
-        this.setPaths = function(func)
+        this.collection = function(name, files, opts)
         {
-            func(paths,buildTo,this);
-            for (var prop in paths) {
-                this[prop] = getPath(prop);
+            // Requesting a collection.
+            if (!files || !files.length) {
+                return collections[name];
             }
+            // Creating or modifying a collection.
+            var object = collections[name] ? collections[name] : new FileCollection();
+            object.add(files);
+
+            // Applying options to a collection.
+            if (opts) {
+                if (opts.dir) object.setDirectory(opts.dir);
+                if (opts.build) object.setBuildFile(opts.build);
+            }
+            object.name = name;
+            collections[name] = object;
             return this;
         };
 
         /**
-         * Return the full build path to the given key.
-         * Or, set the buildTo key or inspect the buildTo object.
-         * @param key string
-         * @param file string|function(BuildConfiguration)
-         * @returns {string|BuildConfiguration|object}
-         */
-        this.to = function(key,file)
-        {
-            if (!arguments.length) {
-                return buildTo;
-            }
-            if (file) {
-                buildTo[key] = typeof file==="function" ? file(this) : file;
-                return this;
-            }
-            return this.build(buildTo[key]);
-        };
-
-        /**
-         * Return a prefixed build path for when overwriting a file.
-         * @param key string
-         * @returns {object}
-         */
-        this.prefixTo = function(key)
-        {
-            var out = {};
-            out[this.to(key)] = this.to(key);
-            return out;
-        };
-
-        /**
-         * Return an object where the key is the build path and the value is the array of files.
-         * @param key string
-         * @returns {{}}
-         */
-        this.into = function(key)
-        {
-            var out = {};
-            out[this.to(key)] = this.config(key);
-            return out;
-        };
-
-        /**
-         * For each file in the given config key, return object with key prefixed with file path.
-         * @param key string
-         * @returns {{}}
-         */
-        this.prefix = function(key)
-        {
-            var out = {};
-            var files = this.config(key);
-            if (files && files.length) {
-                files.map(function(file) {
-                    out[file] = file;
-                });
-            }
-            return out;
-        };
-
-        /**
-         * Create a path or array of paths from a file or set of files.
-         * @param pathName string
-         * @param prefix string
-         * @param files string|array
+         * Get or set a common path.
+         * @param name string
+         * @param path string
          * @returns {*}
          */
-        this.path = function(pathName,prefix,files)
+        this.path = function(name, path)
         {
-            // No arguments, return all paths.
-            if (!arguments.length) {
-                return paths;
+            if (!path) {
+                return paths[name];
             }
-            var path = paths[pathName];
+            paths[name] = path;
+            return this;
+        };
 
-            // No file
-            if (!files) {
-                return path;
-            }
+        /**
+         * Return the collections or a collection by name.
+         * @param name string
+         * @returns {FileCollection|null}
+         */
+        this.collections = function(name)
+        {
+            return name ? collections[name] : collections;
+        };
 
-            // Multiple Files
-            if (typeof files=="object") {
-                return files.map(function(file,i) {
-                    if (join(prefix,file).indexOf(path) ==0) return file;
-                    return join(path,prefix,file);
+        /**
+         * Log to the console for debugging purposes.
+         * @returns void
+         */
+        this.dump = function()
+        {
+            var i = 0;
+            for (var name in collections) {
+                var object = collections[name];
+                console.log(chalk.green(object.name)+" -> "+chalk.red(object.buildFile));
+                object.map(function(file) {
+                    i++;
+                    console.log(chalk.blue(i)+" "+file.path());
                 });
+                console.log("\n");
             }
-
-            // Single file
-            if (join(prefix,files).indexOf(path) ==0) return files;
-            return join(path,prefix,files);
         };
 
-        /**
-         * Create a new path type.
-         * @param pathName string
-         * @param path string
-         * @returns {BuildConfiguration}
-         */
-        this.setPath = function(pathName, path)
-        {
-            paths[pathName] = path;
-            this[pathName] = getPath(pathName);
-            return this;
-        };
 
         /**
-         * Add files to the build configuration.
-         * @param type string property in config
-         * @param pathName string
-         * @param files string|array
-         * @returns {BuildConfiguration}
-         */
-        this.add = function(type,pathName,files)
-        {
-            if (!conf[type]) {
-                conf[type] = [];
-            }
-            if (typeof files=="function") {
-                conf[type].merge( files(this,this[pathName]) );
-                return this;
-            }
-            conf[type].merge( this[pathName](files) );
-            return this;
-        };
-
-        // Alias methods to add stuff to the config.
-        this.src    = confOp('src','js');
-        this.lib    = confOp('lib','js');
-        this.css    = confOp('css','build');
-        this.srcJsx = confOp('jsx','jsx');
-
-        /**
-         * Set the config or get the config, or a property of the config.
+         * Check if a collection exists and has files.
          * @param key string
-         * @returns {object|array|null}
-         */
-        this.config = function(key,value)
-        {
-            if (!arguments.length) {
-                return conf;
-            }
-            if (key && !value) {
-                return conf[key] || null;
-            }
-            conf[key] = value;
-            return this;
-        };
-
-        /**
-         * Check if a key is set and has any items.
-         * @param key
          * @returns {boolean}
          */
         this.has = function(key)
         {
-            return conf[key] && conf[key].length>0 ? true:false;
+            return collections[key] && collections[key].length>0 ? true:false;
         };
 
         /**
@@ -475,81 +396,6 @@ var builder = (function(){
             }
             return this;
         };
-
-        /**
-         * Set up an alias for adding files to the config.
-         * @param type
-         * @param pathName
-         * @returns {Function}
-         */
-        function confOp(type,pathName)
-        {
-            return function(files)
-            {
-                if (!arguments.length) {
-                    return build.config(type);
-                }
-                return build.add(type,pathName,files);
-            }
-        }
-
-        /**
-         * Set up an alias for creating a path to a file or files.
-         * @param pathName string
-         * @returns {Function}
-         */
-        function getPath(pathName)
-        {
-            return function()
-            {
-                var args = getPathArguments(arguments, pathName);
-                return build.path(args.path, args.prefix, args.files);
-            }
-        }
-
-        /**
-         * Determine the arguments passed to this.path()
-         * @param arr object
-         * @param pathName string
-         * @returns {{path: *, prefix: null, files: null}}
-         */
-        function getPathArguments(arr,pathName)
-        {
-            var args = {
-                path:pathName,
-                prefix:null,
-                files:null,
-            };
-            switch (arr.length) {
-                case 0:
-                    return args;
-                case 1:
-                    args.files = arr[0];
-                    return args;
-                case 2:
-                    args.files = arr[1];
-                    args.prefix = arr[0];
-                    return args;
-                default:
-                    throw ("Too Many arguments supplied for getPathArguments.");
-                    break;
-            }
-        }
-
-        /**
-         * Join all arguments passed to this function and ignore empty ones.
-         * @returns {string}
-         */
-        function join()
-        {
-            var str = [];
-            for (var i in arguments)
-            {
-                if (!arguments[i]) continue;
-                str.push(arguments[i]);
-            }
-            return str.join("/");
-        }
     }
 
     /**
@@ -580,16 +426,17 @@ var builder = (function(){
             grunt = instance;
             options = parseFlags(grunt.option.flags());
 
-            // Node modules to load.
-            grunt.loadNpmTasks('grunt-autoprefixer');
-            grunt.loadNpmTasks('grunt-contrib-concat');
-            grunt.loadNpmTasks('grunt-contrib-compass');
-            grunt.loadNpmTasks('grunt-contrib-uglify');
-            grunt.loadNpmTasks('grunt-contrib-cssmin');
-            grunt.loadNpmTasks('grunt-contrib-watch');
-            grunt.loadNpmTasks('grunt-react');
+            var useGroup = options.use || 'default';
+            var $ = this.use(useGroup);
 
-            return this.use( options.use || 'default' );
+            if (!$) {
+                console.log(chalk.red("\nMissing Build Configuration! -> "+useGroup));
+                process.exit();
+            }
+
+            console.log("\n"+"** Using Build Configuration: "+chalk.green($.name)+" **\n\n");
+
+            return $;
         },
 
         /**

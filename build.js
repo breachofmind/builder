@@ -4,71 +4,66 @@
  */
 var $ = require('./index');
 
-/**
- * Bulk order configuration.
- */
-$.register('bulkorder')
-    .lib([
-        'lib/jquery/dist/jquery.min.js',
-        'lib/react/react.js',
-        'lib/react/react-dom.js'
-    ])
-    .src([
-        'main.js'
-    ])
-    .srcJsx([
-        'bulkorder.jsx'
-    ]);
-
-
-/**
- * Default configuration.
- */
-$.register('site')
-    .css([
+$.register('default')
+    .path('asset', 'resources/assets')
+    .path('scss', 'resources/assets/scss')
+    .path('js', 'resources/assets/js')
+    // Javascript libraries.
+    .collection('js-lib', [
+        "modernizr.js",
+        "jquery/dist/jquery.min.js",
+        "jquery.cookie/jquery.cookie.js",
+        "fastclick/lib/fastclick.js",
+        "foundation/js/foundation.min.js",
+        "angular/angular.min.js",
+        "angular-sanitize/angular-sanitize.min.js",
+        "scrollmagic/scrollmagic/minified/ScrollMagic.min.js",
+        "d3/d3.min.js",
+        "d3/sankey.lib.js",
+        "d3-tip/index.js",
+        "topojson/topojson.js",
+        "handlebars/handlebars.min.js",
+        "gsap/src/minified/TweenMax.min.js",
+        "gsap/src/minified/plugins/ScrollToPlugin.min.js"
+    ], {
+        dir: '{js}/lib',
+        build: 'default.lib.js'
+    })
+    // Javascript source code.
+    .collection('js-src', [
+        "util.js",
+        "main.js",
+        "event.js",
+        "animate.js",
+        "draw/draw-utils.js",
+        "draw/line.js",
+        "draw/sankey.js",
+        "draw/scatter.js",
+        "draw/bubble.js",
+        "draw/choropleth.js",
+        "draw/bar.js",
+        "base.js",
+        "layer.js",
+        "axis.js",
+        "tip.js",
+        "series/series.js",
+        "series/basic.js",
+        "series/sankey.js",
+        "chart/chart.js",
+        "chart/basic.js",
+        "chart/sankey.js",
+        "chart/choropleth.js"
+    ], {
+        dir: 'resources/assets/js/vis',
+        build: 'default.src.js'
+    })
+    // Generated css for autoprefix.
+    .collection('css', [
         "base.css",
         "site.css"
-    ])
-    .lib([
-        "lib/modernizr/modernizr.js",
-        "lib/jquery/dist/jquery.min.js",
-        "lib/jquery.cookie/jquery.cookie.js",
-        "lib/fastclick/lib/fastclick.js",
-        "lib/foundation/js/foundation.min.js",
-        "lib/angular/angular.min.js",
-        "lib/angular-sanitize/angular-sanitize.min.js",
-        "lib/scrollmagic/scrollmagic/minified/ScrollMagic.min.js",
-        "lib/d3/d3.min.js",
-        "lib/d3/sankey.lib.js",
-        "lib/d3-tip/index.js",
-        "lib/topojson/topojson.js",
-        "lib/handlebars/handlebars.min.js",
-        "lib/gsap/src/minified/TweenMax.min.js",
-        "lib/gsap/src/minified/plugins/ScrollToPlugin.min.js"
-    ])
-    .src([
-        "vis/util.js",
-        "vis/main.js",
-        "vis/event.js",
-        "vis/animate.js",
-        "vis/draw/draw-utils.js",
-        "vis/draw/line.js",
-        "vis/draw/sankey.js",
-        "vis/draw/scatter.js",
-        "vis/draw/bubble.js",
-        "vis/draw/choropleth.js",
-        "vis/draw/bar.js",
-        "vis/base.js",
-        "vis/layer.js",
-        "vis/axis.js",
-        "vis/tip.js",
-        "vis/series/series.js",
-        "vis/series/basic.js",
-        "vis/series/sankey.js",
-        "vis/chart/chart.js",
-        "vis/chart/basic.js",
-        "vis/chart/sankey.js",
-        "vis/chart/choropleth.js"
-    ]);
+    ], {
+        dir: 'public/static'
+    });
+
 
 module.exports = $;
