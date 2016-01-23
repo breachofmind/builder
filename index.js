@@ -1,12 +1,12 @@
 var inspect = require('util').inspect,
-    chalk = require('chalk'),
-    defaults = {};
-
-defaults.buildPath = "public/static";
-defaults.resourcePath = "resources";
-defaults.assetPath = "resources/assets";
+    chalk = require('chalk');
 
 
+/**
+ * Merges an array into this array.
+ * @param array
+ * @returns {Array}
+ */
 Array.prototype.merge = function(array)
 {
     if (typeof array == "string") {
@@ -19,6 +19,11 @@ Array.prototype.merge = function(array)
     return this;
 };
 
+/**
+ * Concatenates only non-empty values with the given sep, or comma by default.
+ * @param sep string
+ * @returns {string}
+ */
 Array.prototype.concat = function(sep)
 {
     if (!arguments.length) {
@@ -34,18 +39,20 @@ Array.prototype.concat = function(sep)
     return str.join(sep);
 };
 
+/**
+ * Replaces {key} with the given value.
+ * @param key string
+ * @param value string
+ * @returns {string}
+ */
 String.prototype.replaceKey = function(key,value)
 {
-    var txt = this;
-    var rx = /{([^}]+)}/g;
-    var keys = {};
-    while(match = rx.exec(txt)) {
-        keys[match[1]] = match.index;
+    var txt = this.toString();
+    var find = "{"+key+"}";
+    while(txt.search(find) !== -1) {
+        txt = txt.replace(find,value);
     }
-    if (keys[key]) {
-        return txt.replace(new RegExp("{"+key+"}","g"),value);
-    }
-    return txt.toString();
+    return txt;
 };
 
 
@@ -91,7 +98,7 @@ function File(name)
 
     /**
      * Return the segments or a specific segment of the directory.
-     * @param n
+     * @param n int
      * @returns {*}
      */
     this.segments = function(n)
@@ -176,8 +183,8 @@ function FileCollection(files)
         if (!files) {
             return this;
         }
-        if (files instanceof String) {
-            collection.push(new File(files));
+        if (files instanceof String || files instanceof File) {
+            collection.push(files instanceof String ? new File(files) : files);
             return this;
         }
         files.map(function(file) {
@@ -319,8 +326,8 @@ var builder = (function(){
 
             // Applying options to a collection.
             if (opts) {
-                if (opts.dir) object.setDirectory(opts.dir);
-                if (opts.build) object.setBuildFile(opts.build);
+                if (opts.dir) object.setDirectory(replacePathKeys(opts.dir));
+                if (opts.build) object.setBuildFile(replacePathKeys(opts.build));
             }
             object.name = name;
             collections[name] = object;
@@ -338,7 +345,7 @@ var builder = (function(){
             if (!path) {
                 return paths[name];
             }
-            paths[name] = path;
+            paths[name] = replacePathKeys(path);
             return this;
         };
 
@@ -370,6 +377,20 @@ var builder = (function(){
             }
         };
 
+        /**
+         * Return a collection of all the build files in this configuration.
+         * @returns {FileCollection}
+         */
+        this.buildFiles = function()
+        {
+            var object = new FileCollection();
+            for (var name in collections) {
+                if (collections[name].buildFile) {
+                    object.add(collections[name].buildFile.clone());
+                }
+            }
+            return object;
+        };
 
         /**
          * Check if a collection exists and has files.
@@ -396,6 +417,22 @@ var builder = (function(){
             }
             return this;
         };
+
+        /**
+         * Replaces path keys with corresponding path.
+         * @param string
+         * @returns {string}
+         */
+        function replacePathKeys(string)
+        {
+            if (!string instanceof String) {
+                return string;
+            }
+            for (var key in paths) {
+                var string = string.replaceKey(key, paths[key]);
+            }
+            return string;
+        }
     }
 
     /**
@@ -426,11 +463,20 @@ var builder = (function(){
             grunt = instance;
             options = parseFlags(grunt.option.flags());
 
+            // Node modules to load.
+            grunt.loadNpmTasks('grunt-autoprefixer');
+            grunt.loadNpmTasks('grunt-contrib-concat');
+            grunt.loadNpmTasks('grunt-contrib-compass');
+            grunt.loadNpmTasks('grunt-contrib-uglify');
+            grunt.loadNpmTasks('grunt-contrib-cssmin');
+            grunt.loadNpmTasks('grunt-contrib-watch');
+            grunt.loadNpmTasks('grunt-react');
+
             var useGroup = options.use || 'default';
             var $ = this.use(useGroup);
 
             if (!$) {
-                console.log(chalk.red("\nMissing Build Configuration! -> "+useGroup));
+                console.error(chalk.red("\nMissing Build Configuration! -> "+useGroup));
                 process.exit();
             }
 

@@ -102,12 +102,7 @@ module.exports = function(grunt) {
      */
     initConfig['uglify'] = {
         src: {
-            files: $.collection('js-src').prefix(function(file) {
-                return [file.basename,'min',file.extension].concat(".");
-            })
-        },
-        lib: {
-            files: $.collection('js-lib').prefix(function(file) {
+            files: $.buildFiles().prefixOverwrite(function(file){
                 return [file.basename,'min',file.extension].concat(".");
             })
         }
@@ -129,16 +124,7 @@ module.exports = function(grunt) {
 
     grunt.initConfig(initConfig);
 
-    // Node modules to load.
-    grunt.loadNpmTasks('grunt-autoprefixer');
-    grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.loadNpmTasks('grunt-contrib-compass');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
-    grunt.loadNpmTasks('grunt-contrib-cssmin');
-    grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-react');
-
     grunt.registerTask('default', $.tasks());
 
-    grunt.registerTask('production', 'Minify files for production.', ['uglify:lib','uglify:src','cssmin']);
+    grunt.registerTask('production', 'Minify files for production.', ['uglify:src','cssmin']);
 };

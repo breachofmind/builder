@@ -4,10 +4,12 @@
  */
 var $ = require('./index');
 
-$.register('default')
+var def = $.register('default')
     .path('asset', 'resources/assets')
-    .path('scss', 'resources/assets/scss')
-    .path('js', 'resources/assets/js')
+    .path('scss', '{asset}/scss')
+    .path('js', '{asset}/js')
+    .path('static', 'public/static')
+
     // Javascript libraries.
     .collection('js-lib', [
         "modernizr.js",
@@ -27,7 +29,7 @@ $.register('default')
         "gsap/src/minified/plugins/ScrollToPlugin.min.js"
     ], {
         dir: '{js}/lib',
-        build: 'default.lib.js'
+        build: '{static}/default.lib.js'
     })
     // Javascript source code.
     .collection('js-src', [
@@ -54,16 +56,17 @@ $.register('default')
         "chart/sankey.js",
         "chart/choropleth.js"
     ], {
-        dir: 'resources/assets/js/vis',
-        build: 'default.src.js'
+        dir: '{asset}/js/vis',
+        build: '{static}/default.src.js'
     })
     // Generated css for autoprefix.
     .collection('css', [
         "base.css",
         "site.css"
     ], {
-        dir: 'public/static'
+        dir: '{static}'
     });
 
+console.log(def.buildFiles().list())
 
 module.exports = $;
