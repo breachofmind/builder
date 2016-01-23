@@ -67,6 +67,4 @@ var def = $.register('default')
         dir: '{static}'
     });
 
-console.log(def.buildFiles().list())
-
 module.exports = $;
