@@ -360,6 +360,35 @@ var builder = (function(){
         };
 
         /**
+         * Getter for paths var.
+         * @returns {{}}
+         */
+        this.getPaths = function()
+        {
+            return paths;
+        };
+
+        /**
+         * Use previously set path(s) from another group.
+         * @param groupName string
+         * @return {BuildConfiguration}
+         */
+        this.usePath = function(groupName, pathName)
+        {
+            var group = groups[groupName];
+            if (!group) {
+                throw (groupName + "does not exist!");
+            }
+            var _paths = group.getPaths();
+            if (pathName) {
+                paths[pathName] = _paths[pathName];
+                return this;
+            }
+            paths = _paths;
+            return this;
+        };
+
+        /**
          * Return the collections or a collection by name.
          * @param name string
          * @returns {FileCollection|null}

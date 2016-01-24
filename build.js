@@ -4,11 +4,15 @@
  */
 var $ = require('./index');
 
+var first = $.register('first')
+    .path('global', 'global/path')
+
 var build = $.register('default')
     .path('asset', 'resources/assets')
     .path('scss', '{asset}/scss')
     .path('js', '{asset}/js')
     .path('static', 'public/static')
+    .usePath('first','global')
 
     // Javascript libraries.
     .collection('js-lib', [
