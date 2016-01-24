@@ -67,6 +67,6 @@ var build = $.register('default')
         dir: '{static}'
     });
 
-//build.dump();
+build.dump();
 
 module.exports = $;

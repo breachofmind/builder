@@ -219,12 +219,13 @@ function FileCollection(files)
     /**
      * Bulk-set the file directories.
      * @param dir string
+     * @param prepend boolean - replace all directories or prepend the directory?
      * @returns {FileCollection}
      */
-    this.setDirectory = function(dir)
+    this.setDirectory = function(dir,prepend)
     {
         this.map(function(file){
-            file.dir = dir;
+            file.dir = prepend && file.dir ? dir+"/"+file.dir : dir;
         });
         return this;
     };
@@ -335,7 +336,7 @@ var builder = (function(){
 
             // Applying options to a collection.
             if (opts) {
-                if (opts.dir) object.setDirectory(replacePathKeys(opts.dir));
+                if (opts.dir) object.setDirectory(replacePathKeys(opts.dir),true);
                 if (opts.build) object.setBuildFile(replacePathKeys(opts.build));
             }
             object.name = name;
