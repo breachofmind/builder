@@ -24,7 +24,7 @@ Array.prototype.merge = function(array)
  * @param sep string
  * @returns {string}
  */
-Array.prototype.concat = function(sep)
+Array.prototype.joinNonEmpty = function(sep)
 {
     if (!arguments.length) {
         sep = ", ";
@@ -89,11 +89,11 @@ function File(name)
      */
     this.path = function(manipulator)
     {
-        var filename = [this.basename,this.extension].concat('.');
+        var filename = [this.basename,this.extension].joinNonEmpty('.');
         if (manipulator) {
             filename = manipulator(this);
         }
-        return [this.dir, filename].concat("/");
+        return [this.dir, filename].joinNonEmpty("/");
     };
 
     /**
@@ -136,7 +136,7 @@ function File(name)
      */
     this.minified = function()
     {
-        return [this.basename,'min',this.extension].concat(".");
+        return [this.basename,'min',this.extension].joinNonEmpty(".");
     };
 
     /**
@@ -383,6 +383,10 @@ var builder = (function(){
                     console.log(chalk.blue(i)+" "+file.path());
                 });
                 console.log("\n");
+            }
+            console.log("Paths:\n");
+            for (var name in paths) {
+                console.log(chalk.green(name) +" -> "+chalk.cyan(paths[name]));
             }
         };
 

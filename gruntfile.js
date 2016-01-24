@@ -29,16 +29,15 @@ module.exports = function(grunt) {
     $.tasks('concat:lib');
     $.tasks('concat:src');
 
-
     /**
      * <compass>
      */
     initConfig['compass'] = {
         dist: {
             options: {
-                sassDir: 'resources/assets/scss',
-                cssDir:  'public/static',
-                //importPath: $.import()
+                sassDir: $.path('scss'),
+                cssDir: $.path('static'),
+                importPath: $.path('import')
             }
         }
     };
@@ -55,12 +54,12 @@ module.exports = function(grunt) {
             options: {livereload:true}
         },
         scss: {
-            files: ['resources/assets/scss/**/*.scss'],
+            files: [$.path('scss')+'/**/*.scss'],
             tasks: ['compass'],
             options: {livereload:true}
         },
         blade: {
-            files: ['resources/assets/views/**/*.php'],
+            files: [$.path('views')+'/**/*.php'],
             options: {livereload:true}
         }
     };
@@ -103,7 +102,7 @@ module.exports = function(grunt) {
     initConfig['uglify'] = {
         src: {
             files: $.buildFiles().prefixOverwrite(function(file){
-                return [file.basename,'min',file.extension].concat(".");
+                return file.minified();
             })
         }
     };
@@ -115,7 +114,7 @@ module.exports = function(grunt) {
     initConfig['cssmin'] = {
         src: {
             files: $.collection('css').prefixOverwrite(function(file) {
-                return [file.basename,'min',file.extension].concat(".");
+                return file.minified();
             })
         }
     };

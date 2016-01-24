@@ -4,7 +4,7 @@
  */
 var $ = require('./index');
 
-var def = $.register('default')
+var build = $.register('default')
     .path('asset', 'resources/assets')
     .path('scss', '{asset}/scss')
     .path('js', '{asset}/js')
@@ -66,5 +66,7 @@ var def = $.register('default')
     ], {
         dir: '{static}'
     });
+
+//build.dump();
 
 module.exports = $;
