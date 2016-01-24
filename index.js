@@ -131,6 +131,15 @@ function File(name)
     };
 
     /**
+     * Return the filename as a minified filename.
+     * @returns {string}
+     */
+    this.minified = function()
+    {
+        return [this.basename,'min',this.extension].concat(".");
+    };
+
+    /**
      * Parse the given name into parts.
      * @param file string
      */
