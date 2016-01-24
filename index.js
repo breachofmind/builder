@@ -538,7 +538,7 @@ var builder = (function(){
                 grunt.loadNpmTasks(name);
             });
 
-            var useGroup = this.options.use || 'default';
+            var useGroup = options.use || 'default';
             var $ = this.use(useGroup);
 
             if (!$) {
