@@ -300,6 +300,7 @@ FileCollection.prototype.constructor = FileCollection;
 var builder = (function(){
     var grunt,
         options,
+        primaryTask,
         groups = {};
 
     /**
@@ -375,10 +376,7 @@ var builder = (function(){
          */
         this.usePath = function(groupName, pathName)
         {
-            var group = groups[groupName];
-            if (!group) {
-                throw (groupName + "does not exist!");
-            }
+            var group = getGroup(groupName);
             var _paths = group.getPaths();
             if (pathName) {
                 paths[pathName] = _paths[pathName];
@@ -448,12 +446,16 @@ var builder = (function(){
         /**
          * Add a task to the queue or display all tasks.
          * @param taskName string
+         * @param ifTask string - if primaryTask equals this, then add.
          * @returns {BuildConfiguration|array}
          */
-        this.tasks = function(taskName)
+        this.tasks = function(taskName, ifTask)
         {
             if (!arguments.length) {
                 return tasks;
+            }
+            if (ifTask && ifTask!==primaryTask) {
+                return this;
             }
             if (tasks.indexOf(taskName) === -1) {
                 tasks.push(taskName);
@@ -495,7 +497,31 @@ var builder = (function(){
         return map;
     }
 
+    /**
+     * Get a registered group.
+     * @param name string
+     * @returns {BuildConfiguration}
+     */
+    function getGroup(name)
+    {
+        var group = groups[name];
+        if (!group) {
+            throw (name + "does not exist!");
+        }
+        return group;
+    }
+
     return {
+        npmTasks: [
+            'grunt-autoprefixer',
+            'grunt-contrib-concat',
+            'grunt-contrib-compass',
+            'grunt-contrib-uglify',
+            'grunt-contrib-cssmin',
+            'grunt-contrib-watch',
+            'grunt-react'
+        ],
+
         /**
          * Set up the grunt instance and initial tasks.
          * @param instance grunt
@@ -505,17 +531,14 @@ var builder = (function(){
         {
             grunt = instance;
             options = parseFlags(grunt.option.flags());
+            primaryTask = grunt.cli.tasks[0] || 'default';
 
             // Node modules to load.
-            grunt.loadNpmTasks('grunt-autoprefixer');
-            grunt.loadNpmTasks('grunt-contrib-concat');
-            grunt.loadNpmTasks('grunt-contrib-compass');
-            grunt.loadNpmTasks('grunt-contrib-uglify');
-            grunt.loadNpmTasks('grunt-contrib-cssmin');
-            grunt.loadNpmTasks('grunt-contrib-watch');
-            grunt.loadNpmTasks('grunt-react');
+            this.npmTasks.forEach(function(name) {
+                grunt.loadNpmTasks(name);
+            });
 
-            var useGroup = options.use || 'default';
+            var useGroup = this.options.use || 'default';
             var $ = this.use(useGroup);
 
             if (!$) {
@@ -529,13 +552,31 @@ var builder = (function(){
         },
 
         /**
+         * Return the parsed flags object.
+         * @returns {{}}
+         */
+        getOptions: function()
+        {
+            return options;
+        },
+
+        /**
+         * Return the primary task.
+         * @returns {string}
+         */
+        getPrimaryTask: function()
+        {
+            return primaryTask;
+        },
+
+        /**
          * Fetch a build group.
          * @param group string
          * @returns {BuildConfiguration|null}
          */
         use: function(group)
         {
-            return groups[group] ? groups[group] : null;
+            return getGroup(group);
         },
 
         /**
@@ -545,8 +586,7 @@ var builder = (function(){
          */
         register: function(group)
         {
-            var configuration = new BuildConfiguration(group);
-            return groups[group] = configuration;
+            return groups[group] = new BuildConfiguration(group);
         }
     }
 })();
