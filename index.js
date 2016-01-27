@@ -1,3 +1,4 @@
+//v1.0
 var inspect = require('util').inspect,
     chalk = require('chalk');
 
