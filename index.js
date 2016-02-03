@@ -173,15 +173,16 @@ File.prototype.toString = function()
 
 /**
  * File Collection superArray of File objects.
+ * @param name string
  * @param files array of {File}
  * @constructor
  */
-function FileCollection(files)
+function FileCollection(name,files)
 {
     var collection = this;
 
     this.buildFile = null;
-    this.name = null;
+    this.name = name;
 
     /**
      * Add files to this collection.
@@ -345,7 +346,7 @@ var builder = (function(){
                 return collections[name];
             }
             // Creating or modifying a collection.
-            var object = collections[name] ? collections[name] : new FileCollection();
+            var object = collections[name] ? collections[name] : new FileCollection(name,[]);
             object.add(files);
 
             // Applying options to a collection.
@@ -353,7 +354,7 @@ var builder = (function(){
                 if (opts.dir) object.setDirectory(replacePathKeys(opts.dir),true);
                 if (opts.build) object.setBuildFile(replacePathKeys(opts.build));
                 if (opts.addTo) {
-                    object.combine(opts.addTo);
+                    this.combine(object.name, opts.addTo);
                 }
             }
             object.name = name;
