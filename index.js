@@ -366,12 +366,12 @@ var builder = (function(){
          * @param withName string
          * @returns {BuildConfiguration}
          */
-        this.combine = function(withName)
+        this.combine = function(fromName, withName)
         {
-            var self = this;
-            var collection = this.collection(withName);
-            collection.each(function(file,i) {
-                self.add(file);
+            var fromCollection = this.collection(fromName);
+            var withCollection = this.collection(withName);
+            fromCollection.each(function(file,i) {
+                withCollection.add(file);
             });
             return this;
         };
