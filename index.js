@@ -207,6 +207,18 @@ function FileCollection(files)
     };
 
     /**
+     * Iterates through the array.
+     * @param iterator function
+     */
+    this.each = function(iterator)
+    {
+        for (var i=0; i<this.length; i++)
+        {
+            iterator(this[i],i);
+        }
+    };
+
+    /**
      * Return an array of the file paths.
      * @returns {*}
      */
@@ -343,6 +355,21 @@ var builder = (function(){
             }
             object.name = name;
             collections[name] = object;
+            return this;
+        };
+
+        /**
+         * Merge a previously created collection with this one.
+         * @param withName string
+         * @returns {BuildConfiguration}
+         */
+        this.combine = function(withName)
+        {
+            var self = this;
+            var collection = this.collection(withName);
+            collection.each(function(file,i) {
+                self.add(file);
+            });
             return this;
         };
 
@@ -520,7 +547,6 @@ var builder = (function(){
             'grunt-contrib-uglify',
             'grunt-contrib-cssmin',
             'grunt-contrib-watch',
-            'grunt-react'
         ],
 
         /**
