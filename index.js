@@ -347,6 +347,7 @@ var builder = (function(){
             }
             // Creating or modifying a collection.
             var object = collections[name] ? collections[name] : new FileCollection(name,[]);
+            collections[name] = object;
             object.add(files);
 
             // Applying options to a collection.
@@ -357,8 +358,6 @@ var builder = (function(){
                     this.combine(object.name, opts.addTo);
                 }
             }
-            object.name = name;
-            collections[name] = object;
             return this;
         };
 
