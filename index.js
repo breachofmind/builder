@@ -352,6 +352,9 @@ var builder = (function(){
             if (opts) {
                 if (opts.dir) object.setDirectory(replacePathKeys(opts.dir),true);
                 if (opts.build) object.setBuildFile(replacePathKeys(opts.build));
+                if (opts.addTo) {
+                    object.combine(opts.addTo);
+                }
             }
             object.name = name;
             collections[name] = object;
