@@ -459,11 +459,12 @@ var builder = (function(){
             var object = new FileCollection();
             for (var name in collections) {
                 if (collections[name].buildFile) {
-                  if (names && names.indexOf(name)>-1) {
+                  if (! names) {
                     object.add(collections[name].buildFile.clone());
                     continue;
-                  }
+                  } else if (names.indexOf(name) > -1) {
                     object.add(collections[name].buildFile.clone());
+                  }
                 }
             }
             return object;
