@@ -451,13 +451,18 @@ var builder = (function(){
 
         /**
          * Return a collection of all the build files in this configuration.
+         * @param names array optional
          * @returns {FileCollection}
          */
-        this.buildFiles = function()
+        this.buildFiles = function(names)
         {
             var object = new FileCollection();
             for (var name in collections) {
                 if (collections[name].buildFile) {
+                  if (names && names.indexOf(name)>-1) {
+                    object.add(collections[name].buildFile.clone());
+                    continue;
+                  }
                     object.add(collections[name].buildFile.clone());
                 }
             }
