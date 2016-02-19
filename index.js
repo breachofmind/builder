@@ -582,7 +582,7 @@ var builder = (function(){
                 process.exit();
             }
 
-            console.log("\n"+"** Using Build Configuration: "+chalk.green($.name)+" **\n\n");
+            console.log("\n** Using Build Configuration: "+chalk.green($.name)+" **\n");
 
             return $;
         },
